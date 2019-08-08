@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Quiz</title>
+    <link rel="stylesHeet" type="text/css" href="./resources/css/ext-all.css" />
+    <script type="text/javascript" src="./adapter/ext/ext-base.js"></script>
+    <script type="text/javascript" src="./js/ext-all.js"></script>
+    <script>
+        Ext.onReady(function () {
+
+            var navHandler = function (direction) {
+                var centerCard = Ext.getCmp('centerCard').layout;
+                var prev = Ext.getCmp('prev');
+                var next = Ext.getCmp('next');
+                var activeId = centerCard.activeItem.id;
+                if (activeId == 'step-0') {
+                    if (direction == 1) {
+                        centerCard.setActiveItem(1);
+                        prev.setDisabled(false);
+                    }
+                } else if (activeId == 'step-1') {
+                    if (direction == -1) {
+                        centerCard.setActiveItem(0);
+                        prev.setDisabled(true);
+                    } else {
+                        centerCard.setActiveItem(2);
+                        next.setDisabled(true);
+                        setCheckboxValues()
+                    }
+                } else if (activeId == 'step-2') {
+                    if (direction == -1) {
+                        centerCard.setActiveItem(1);
+                        next.setDisabled(false);
+                    }
+                }
+            };
+
+            var changeValue = function (item, check) {
+                if (check) {
+                    Ext.getCmp('result-q1').setValue(item.inputValue)
+                }
+            }
+
+            var setCheckboxValues = function () {
+                var boxValues = Ext.getCmp('answer-q50').getValue().map(v => v.inputValue)
+                console.log('values', boxValues)
+                if (boxValues.length > 0) {
+                    Ext.getCmp('result-q50').setValue(boxValues.toString())
+                }
+            }
+
+            const question_radio = new Ext.form.RadioGroup({
+                // Ext.getCmp('q1').getValue().inputValue
+                allowBlank: false,
+                vertical: true,
+                id: "answer-q1",
+                items: [{
+                    boxLabel: '湿垃圾', name: 'answer-q1', inputValue: 'A',
+                    listeners: { 'check': changeValue }
+                }, {
+                    boxLabel: '干垃圾', name: 'answer-q1', inputValue: 'B',
+                    listeners: { 'check': changeValue }
+                }, {
+                    boxLabel: '有害垃圾', name: 'answer-q1', inputValue: 'C',
+                    listeners: { 'check': changeValue }
+                }, {
+                    boxLabel: '可回收物', name: 'answer-q1', inputValue: 'D',
+                    listeners: { 'check': changeValue }
+                }]
+            });
+
+
+            const question_checkbox = new Ext.form.CheckboxGroup({
+                // Ext.getCmp('answer-q50').getValue().map(v => v.inputValue)
+                allowBlank: false,
+                vertical: true,
+                id: "answer-q50",
+                items: [
+                    {
+                        boxLabel: '把粑粑用废纸包好带回家冲掉',
+                        name: 'cb-auto-1',
+                        inputValue: 'A'
+                    },
+                    {
+                        boxLabel: '受污染的废纸按有害垃圾处理',
+                        name: 'cb-auto-2',
+                        inputValue: 'B'
+                    },
+                    {
+                        boxLabel: '没受污染的废纸按可回收垃圾处理',
+                        name: 'cb-auto-3',
+                        inputValue: 'C'
+                    },
+                    {
+                        boxLabel: '受污染的废纸浸水后当湿垃圾处理',
+                        name: 'cb-auto-4',
+                        inputValue: 'D'
+                    }
+                ]
+            });
+
+            var resultForm = new Ext.FormPanel({
+                labelWidth: 100,
+                frame: true,
+                id: 'resultForm',
+                title: 'Answer Result Form',
+                bodyStyle: 'padding:5px 5px 0',
+                defaultType: 'textfield',
+                items: [{
+                    fieldLabel: 'Q1',
+                    id: 'result-q1',
+                    name: 'result-q1'
+                }, {
+                    fieldLabel: 'Q50',
+                    id: 'result-q50',
+                    name: 'result-q50'
+                }],
+                buttons: [{
+                    text: 'submit',
+                    handler: function () {
+                        let results = Object.values(resultForm.form.getValues())
+                        if (results[0] && results[1]) {
+                            if (results[0] !== 'A') {
+                                Ext.Msg.alert('提示', '第一题选错啦，请重新选择')
+                            } else if (results[1].includes('D')) {
+                                Ext.Msg.alert('提示', '第二题选错啦，请重新选择')
+                            } else if (!results[1].includes('A,B,C')) {
+                                Ext.Msg.alert('提示', '第二题还没选完整呢，请重新选择')
+                            } else {
+                                Ext.Msg.alert('提示', '恭喜你全部答对啦')
+                            }
+                        } else {
+                            Ext.Msg.alert('提示', '您还没有没答完的题，请检查后重试')
+                        }
+                    }
+                }]
+            });
+
+            var myBorderPanel = new Ext.Panel({
+                renderTo: document.body,
+                title: '测试',
+                layout: 'border',
+                width: 1000,
+                height: 300,
+                items: [{
+                    title: 'Main',
+                    region: 'center',
+                    layout: 'card',
+                    id: 'centerCard',
+                    activeItem: 0,
+                    bodyStyle: 'padding:15px',
+                    bbar: [{
+                        id: 'prev',
+                        text: '上一步',
+                        handler: navHandler.createDelegate(this, [-1]),
+                        disabled: true
+                    }, '->', {
+                        id: 'next',
+                        text: '下一步',
+                        handler: navHandler.createDelegate(this, [1])
+                    }],
+                    items: [{
+                        id: 'step-0',
+                        items: [{
+                            xtype: 'fieldset',
+                            id: 'q1',
+                            name: 'q1',
+                            title: 'Q1: 番茄酱属于以下哪种垃圾？（单选）',
+                            items: [
+                                question_radio
+                            ]
+                        }]
+                    }, {
+                        id: 'step-1',
+                        items: [{
+                            xtype: 'fieldset',
+                            id: 'q50',
+                            name: 'q50',
+                            title: 'Q50: 王大叔出门遛狗后，哪些是正确处理狗狗粑粑的方法？（多选）',
+                            defaultType: 'checkbox',
+                            items: [
+                                question_checkbox
+                            ]
+                        }]
+                    }, {
+                        id: 'step-2',
+                        items: [
+                            resultForm
+                        ]
+                    }]
+                }]
+            })
+        })
+    </script>
+</head>
+
+<body>
+</body>
+
+</html>
